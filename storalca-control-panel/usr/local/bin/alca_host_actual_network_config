@@ -1,0 +1,17 @@
+#! /bin/bash
+
+
+## config type
+/bin/grep 'BOOTPROTO=' /etc/sysconfig/network-scripts/ifcfg-eth0 | awk -F'=' '{print $NF}'
+
+## ipaddr
+/sbin/ifconfig eth0 | grep 'inet addr' | awk '{print $2}' | awk -F':' '{print $2}'
+
+## gateway
+/sbin/route | grep eth0 | grep default | awk '{print $2}'
+
+## netmask
+/sbin/ifconfig eth0 | grep 'inet addr' | awk '{print $NF}' | awk -F':' '{print $2}'
+
+## DNS 1 and 2
+/bin/cat /etc/resolv.conf | grep nameserver | awk '{print $2}'

@@ -1,0 +1,52 @@
+#! /bin/bash
+
+
+exec 2>&1
+
+#############################################
+# Get the arguments
+#############################################
+for param in $*
+do
+	option_type=$(echo $param | awk -F'=' '{print $1}')
+	option_value=$(echo $param | awk -F'=' '{print $2}')
+
+
+	case $option_type in
+	lvname)
+		lv_name=$option_value
+		;;
+	lvsize)
+		lv_size=$option_value
+		;;
+	*)
+		echo "Bad argument"
+		exit 1
+		;;
+	esac
+done
+
+#############################################
+# Quick test of the parameters
+#############################################
+if [[ -z $lv_name ]] || [[ -z $lv_size ]]
+then
+	echo "Error : All the parameters must be given"
+	exit 1
+fi
+
+echo $lv_size | grep -Ex "[0-9]{1,7}M|[0-9]{1,4}G" 2>&1 > /dev/null
+if [ $? -ne 0 ]
+then
+	echo "The volume disk size is not valid"
+	exit 1
+fi
+
+
+#############################################
+# Creation of the volume
+#############################################
+
+/sbin/lvcreate -L ${lv_size} -n ${lv_name} vgr0
+
+#mkfs.ext3 /dev/vgr0/${lv_name}

@@ -1,0 +1,142 @@
+#! /bin/bash
+
+exec 2>&1
+
+#############################################
+# Test the IP format
+#############################################
+function test_ip_format
+{
+	digit_nb=0
+	for ip in $(echo $option_value | sed s/'\.'/' '/g )
+	do
+		digit_nb=$(expr $digit_nb \+ 1)
+		if [[ $ip -gt 255 ]] || [[ $ip -lt 0 ]]
+		then
+			echo "Error : IPv4 format not good"
+			exit 1
+		fi
+	done
+	if [[ $digit_nb -ne 4 ]]
+	then
+		echo "Error : IPv4 format not good"
+		exit 1
+	fi
+}
+
+
+#############################################
+# Get the arguments
+#############################################
+for param in $*
+do
+	option_type=$(echo $param | awk -F'=' '{print $1}')
+	option_value=$(echo "$param" | awk -F'=' '{print $2}')
+
+	case $option_type in
+	oldname)
+		oldname=$option_value
+		;;
+	newname)
+		newname=$option_value
+		;;
+	ipaddr)
+		test_ip_format
+		ipaddr=$option_value
+		;;
+	devnodes)
+		devnodes=$option_value
+		;;
+	*)
+		echo "Bad argument"
+		exit 1
+		;;
+	esac
+done
+
+#############################################
+# Get somes variables and test
+#############################################
+if [[ -z $oldname ]]
+then
+	echo "Error: need the name of the VM to change"
+	exit 1
+else
+	/usr/sbin/vzlist -a | grep ${oldname}$ > /dev/null 2>&1
+	if [ $? -eq 0 ]
+	then
+		vm_id=$(/usr/sbin/vzlist -a | grep ${oldname}$ | awk '{print $1}')
+	else
+		echo "Error: Server ${oldname} does not exist"
+		exit 1
+	fi
+fi
+
+
+#############################################
+# Stop the server
+#############################################
+/usr/sbin/vzctl stop ${vm_id}
+
+#############################################
+# Change the volume disk
+if [[ -n $devnodes ]]
+then
+	/usr/local/bin/alca_disk_unused_lv | grep ^${devnodes}$ > /dev/null 2>&1
+	if [ $? -ne 0 ]
+	then
+		echo "Error : The volume disk ${devnodes} is already used by another VM"
+		exit 1
+	fi
+
+	/sbin/lvs /dev/vgr0/${devnodes} > /dev/null
+	if [ $? -eq 0 ]
+	then
+		/bin/sed -i /'DEVNODES='/d /etc/vz/conf/${vm_id}.conf
+		/usr/sbin/vzctl set ${vm_id} --devnodes vgr0/${devnodes}:rw --save
+		if [ $? -eq 0 ]
+		then
+			echo "${devnodes} added"
+		else
+			echo "Error : The volume disk ${devnodes} have not been added"
+			exit 1
+		fi
+	else
+		echo "Error : The volume disk ${devnodes} is not valid"
+		exit 1
+	fi
+fi
+
+#############################################
+# Change the name
+if [[ -n $newname ]]
+then
+	/usr/sbin/vzctl set ${vm_id} --hostname ${newname} --save
+	if [ $? -eq 0 ]
+	then
+		echo "Hostname changed to $newname"
+	else
+		echo "Error : The hostname have not been changed"
+		exit 1
+	fi
+fi
+
+#############################################
+# Change the IP
+if [[ -n $ipaddr ]]
+then
+	/usr/sbin/vzctl set ${vm_id} --ipdel all --save
+	/usr/sbin/vzctl set ${vm_id} --ipadd ${ipaddr} --save
+	if [ $? -eq 0 ]
+	then
+		echo "IP changed to $ipaddr"
+	else
+		echo "Error : The IP have not been changed"
+		exit 1
+	fi
+fi
+
+#############################################
+# Start the server
+#############################################
+/usr/sbin/vzctl start ${vm_id}

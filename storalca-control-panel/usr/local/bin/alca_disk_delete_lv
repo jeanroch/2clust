@@ -1,0 +1,39 @@
+#! /bin/bash
+
+
+exec 2>&1
+
+#############################################
+# Get the arguments
+#############################################
+for param in $*
+do
+	option_type=$(echo $param | awk -F'=' '{print $1}')
+	option_value=$(echo $param | awk -F'=' '{print $2}')
+
+
+	case $option_type in
+	lvname)
+		lv_name=$option_value
+		;;
+	*)
+		echo "Bad argument"
+		exit 1
+		;;
+	esac
+done
+
+#############################################
+# Quick test of the parameters
+#############################################
+if [[ -z $lv_name ]]
+then
+	echo "Error : All the parameters must be given"
+	exit 1
+fi
+
+#############################################
+# Delete the volume
+#############################################
+
+/sbin/lvremove -f /dev/vgr0/${lv_name}

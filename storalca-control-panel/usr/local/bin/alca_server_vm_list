@@ -1,0 +1,38 @@
+#! /bin/bash
+
+IFS=$'\n'
+nb=$RANDOM
+
+for nb_server in 1 2
+do
+	/usr/bin/ssh storalca${nb_server} "/usr/sbin/vzlist -a" | grep -v 'IP_ADDR' | awk '{print $1" "$NF}' > /tmp/to_be_delete_${nb}_${nb_server}
+done
+
+for vm_server in $(cat /tmp/to_be_delete_${nb}_1)
+do
+	vm_CTID=""
+	vm_name=""
+	infos_server2=""
+
+	vm_CTID=$(echo $vm_server | awk '{print $1}')
+	vm_name1=$(echo $vm_server | awk '{print $2}')
+	vm_name2=$(echo $vm_server | awk '{print $2}' | sed s/'1$'/'2'/)
+
+	grep ${vm_name2}$ /tmp/to_be_delete_${nb}_2 1> /dev/null 2>&1
+	if [ $? -eq 0 ]
+	then
+		infos_server2=$(grep ${vm_name2}$ /tmp/to_be_delete_${nb}_2)
+		sed -i /"${infos_server2}"/d /tmp/to_be_delete_${nb}_2
+	fi
+
+	[[ -n $infos_server2 ]] && echo "1 $vm_CTID ${vm_name1} 2 $infos_server2"
+	[[ -z $infos_server2 ]] && echo "1 $vm_CTID ${vm_name1}"
+
+done
+
+for remainding_vm in $(cat /tmp/to_be_delete_${nb}_2)
+do
+	echo "2 $remainding_vm"
+done
+
+rm -f /tmp/to_be_delete_${nb}_*

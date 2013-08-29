@@ -1,0 +1,39 @@
+#! /bin/bash
+
+exec 2>&1
+
+
+#############################################
+# Get the arguments
+#############################################
+
+if [[ $1 == "" ]]
+then
+	echo "Bad argument, should be 'newmaster' or 'deletelocal'"
+	exit 1
+fi
+
+for param in $*
+do
+	option=$(echo $param | awk -F'=' '{print $1}')
+
+	case $option in
+	newmaster)
+		#export drbd_option='invalidate_remote'
+		#/sbin/drbdadm ${drbd_option} all
+		/sbin/drbdadm invalidate_remote all
+		/sbin/drbdsetup /dev/drbd0 primary -o
+		;;
+	deletelocal)
+		#export drbd_option='invalidate'
+		#/sbin/drbdadm ${drbd_option} all
+		/sbin/drbdadm invalidate all
+		;;
+	*)
+		echo "Bad argument, should be 'newmaster' or 'deletelocal'"
+		exit 1
+		;;
+	esac
+done
+
+

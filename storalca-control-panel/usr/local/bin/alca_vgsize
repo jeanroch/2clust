@@ -1,0 +1,16 @@
+#! /bin/bash
+
+IFS=$'\n'
+nb=$RANDOM
+
+/usr/bin/sudo /sbin/vgdisplay > /tmp/to_be_delete_$nb
+
+cat /tmp/to_be_delete_$nb | grep "VG Size" | awk '{print $(NF-1)" "$NF}'
+cat /tmp/to_be_delete_$nb | grep "Alloc PE" | awk '{print $(NF-1)" "$NF}'
+cat /tmp/to_be_delete_$nb | grep "Free  PE" | awk '{print $(NF-1)" "$NF}'
+
+#echo -e "total_size=\c"; cat /tmp/to_be_delete_$nb | grep "VG Size" | awk '{print $(NF-1)" "$NF}'
+#echo -e "used_size=\c"; cat /tmp/to_be_delete_$nb | grep "Alloc PE" | awk '{print $(NF-1)" "$NF}'
+#echo -e "free_size=\c"; cat /tmp/to_be_delete_$nb | grep "Free  PE" | awk '{print $(NF-1)" "$NF}'
+
+rm -f /tmp/to_be_delete_$nb

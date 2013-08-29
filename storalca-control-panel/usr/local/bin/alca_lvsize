@@ -1,0 +1,6 @@
+#! /bin/bash
+
+IFS=$'\n'
+
+/usr/bin/sudo /sbin/lvs | grep vgr0 | awk '{print $1" "$4"B"}'
+

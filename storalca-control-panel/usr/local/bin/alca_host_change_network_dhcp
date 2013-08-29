@@ -1,0 +1,27 @@
+#! /bin/bash
+
+exec 2>&1
+
+conf_file_eth="/etc/sysconfig/network-scripts/ifcfg-eth0"
+conf_file_eth_save="/home/apache/backup/save_ifcfg-eth0"
+
+
+#############################################
+# Take back the comment, MAC address and prepare the new file
+#############################################
+comment=$(head -1 $conf_file_eth)
+mac_addr=$(grep HWADDR ${conf_file_eth})
+
+rm -f ${conf_file_eth_save}
+/bin/cp -af ${conf_file_eth} ${conf_file_eth_save}
+
+echo $comment > ${conf_file_eth}
+echo "DEVICE=eth0
+BOOTPROTO=dhcp
+TYPE=Ethernet
+ONBOOT=yes
+$mac_addr" >> ${conf_file_eth}
+
+#### restart the ethernet board
+/sbin/ifdown eth0
+/sbin/ifup eth0

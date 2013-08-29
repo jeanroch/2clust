@@ -1,0 +1,8 @@
+#! /bin/bash
+
+
+for server in storalca1 storalca2
+do
+	/usr/bin/ssh ${server} "/sbin/vgchange -a y vgr0"
+done
+

@@ -1,0 +1,106 @@
+#! /bin/bash
+
+exec 2>&1
+
+#############################################
+# Test the IP format
+#############################################
+function test_ip_format
+{
+	digit_nb=0
+	for ip in $(echo $option_value | sed s/'\.'/' '/g )
+	do
+		digit_nb=$(expr $digit_nb \+ 1)
+		if [[ $ip -gt 255 ]] || [[ $ip -lt 0 ]]
+		then
+			echo "Error : IPv4 format not good"
+			exit 1
+		fi
+	done
+	if [[ $digit_nb -ne 4 ]]
+	then
+		echo "Error : IPv4 format not good"
+		exit 1
+	fi
+}
+
+
+#############################################
+# Get the arguments
+#############################################
+for param in $*
+do
+	option_type=$(echo $param | awk -F'=' '{print $1}')
+	option_value=$(echo "$param" | awk -F'=' '{print $2}')
+
+	case $option_type in
+	vmname)
+		vmname=$option_value
+		;;
+	ipaddr)
+		test_ip_format
+		ipaddr=$option_value
+		;;
+	ostemplate)
+		ostemplate=$option_value
+		;;
+	devnodes)
+		devnodes=$option_value
+		;;
+	rootpasswd)
+		rootpasswd=$option_value
+		;;
+	*)
+		echo "Bad argument"
+		exit 1
+		;;
+	esac
+done
+
+#############################################
+# Test the parameters
+#############################################
+if [[ -z $vmname ]] || [[ -z $ipaddr ]] || [[ -z $ostemplate ]] || [[ -z $devnodes ]] || [[ -z $rootpasswd ]]
+then
+	echo "Error : Parameter is missing"
+	exit 1
+fi
+
+/sbin/lvs /dev/vgr0/${devnodes} > /dev/null
+if [ $? -ne 0 ]
+then
+	echo "Error : The volume disk ${devnodes} is not valid"
+	exit 1
+fi
+
+root_passwd_nb_char=$(echo $rootpasswd | wc -m)
+if [ $root_passwd_nb_char -lt 9 ]
+then
+	echo "Error : root password not valid, must be at least 8 characters and only letters and numbers"
+	exit 1
+fi
+
+#############################################
+# Get somes variables
+#############################################
+dns=$(grep nameserver /etc/resolv.conf | head -1 | awk '{print $NF}')
+
+vm_id1=$(echo $RANDOM | tail -c 3)
+vm_id2=$(echo ${ipaddr} | sed s/'\.'/''/g | tail -c 4)
+vm_id=${vm_id1}${vm_id2}
+
+#############################################
+# Create the VM
+#############################################
+# --config name
+# && vzctl set 151 --features "${services}:on" --save
+# && /usr/sbin/vzctl set ${vm_id} --onboot yes --noatime yes --save \
+
+/usr/sbin/vzctl create ${vm_id} --ostemplate ${ostemplate} --ipadd ${ipaddr} --hostname ${vmname} \
+&& /usr/sbin/vzctl set ${vm_id} --nameserver ${dns} --save \
+&& /usr/sbin/vzctl set ${vm_id} --devnodes vgr0/${devnodes}:rw --save \
+&& /usr/sbin/vzctl set ${vm_id} --capability sys_module:on --save \
+&& /usr/sbin/vzctl set ${vm_id} --features nfsd:on --save \
+&& /usr/sbin/vzctl start ${vm_id} \
+&& /usr/sbin/vzctl set ${vm_id} --userpasswd root:${rootpasswd}
+

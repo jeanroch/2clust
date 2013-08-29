@@ -1,0 +1,180 @@
+/* StorAlca CSS 2010  */
+
+body
+{
+   width: 920px;
+   margin: auto;
+   margin-top: 20px;
+   margin-bottom: 20px;
+   background-color: #434343;   
+background-position: top center;
+background-repeat: no-repeat;
+}
+
+a { text-decoration: none; }
+
+a img {
+   border: none;
+}
+
+u {
+text-decoration: none!important;
+border-bottom: 1px #CECECE dotted;
+-moz-border-radius: 2px;
+}
+
+a:hover {
+text-decoration: none;
+}
+
+p {
+margin-left: 15px;
+}
+
+i {
+font-variant: small-caps;
+color: #b2cd18;}
+
+
+/* Haut */
+
+#tete
+{
+   width: 673px;
+   height: 203px;
+   margin: auto;
+   background-image: url("../images/logo2.png");
+   background-repeat: no-repeat;
+   margin-bottom: 10px;
+}
+
+/* Menu */
+
+#menu
+{
+   width: auto;
+  
+}
+
+#onglets
+{
+
+   text-align: left;
+   font-variant: small-caps;
+   border-bottom : 4px solid #434343;
+background-color: #b2cd18;
+font-size: small;
+letter-spacing: 0.2px;
+word-spacing: 0.5px;
+padding-bottom : 1px;
+-moz-border-radius: 10px;
+    font : bold 18px, arial, serif;
+    list-style-type : none;
+    padding-bottom : 20px;
+    margin-left : 0;
+}
+
+#onglets li
+{    float: left;
+margin : 2px 2px 0 2px !important;
+    margin : 1px 2px 0 2px;
+}
+
+#onglets li.active
+{background-color: #434343;
+   color: white;
+   font-variant: small-caps;
+   padding : 2px;   
+	-moz-border-radius-topleft: 10px;	
+-moz-border-radius-topright: 10px;
+}
+
+#menu  a
+{  color: white;
+   font-variant: small-caps;
+   padding : 2px;
+  
+}
+
+#menu a:hover
+{  color: #c7095e;
+   font-variant: small-caps;
+   padding : 2px;
+}
+/* Corps*/
+
+#corps
+{
+   margin-top: 40px;
+   margin-bottom: 29px;
+text-align: left;
+letter-spacing: 0.2px;
+word-spacing: 0.5px;
+color:#696A6A;
+margin:1px 10px;
+background-color: #EBECEC;
+padding : 5px;
+}
+
+#corps h1
+{
+   font-size: x-large;
+font-family: Arial, "Arial Black", "Times New Roman", Times, serif;
+font-variant: small-caps;
+border-bottom: 1px dashed #CECECE; 
+color: #0189BA;
+text-align: center; 
+letter-spacing: 3px;
+}
+
+#corps h2
+{
+   height: 30px;
+font-style: bold;
+font-variant: small-caps;
+color: #ED6800;
+text-align: center;
+letter-spacing: 2px;
+word-spacing: 4px;
+   padding-left: 30px;
+}
+
+.imp
+{
+font-variant: small-caps;
+color: #c7095e;
+font-style: bold;
+}
+
+
+/*Bas */
+
+#pied
+{
+   clear: both;
+   text-align: center;
+   margin-top: 40px;
+   margin-bottom: 20px;
+letter-spacing: 0.2px;
+word-spacing: 0.5px;
+color:#696A6A;
+margin:1px 10px;
+background-color: #EBECEC;
+padding : 5px;
+}
+
+
+/*UC*/
+
+#UC
+{ text-align: center;
+letter-spacing: 1px;
+word-spacing: 3px;
+   color: white;
+   font-variant: small-caps;
+   padding : 1px;
+}
+
+
+
+ 

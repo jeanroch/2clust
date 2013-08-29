@@ -1,0 +1,50 @@
+#! /bin/bash
+
+
+exec 2>&1
+
+#############################################
+# Get the arguments
+#############################################
+for param in $*
+do
+	option_type=$(echo $param | awk -F'=' '{print $1}')
+	option_value=$(echo $param | awk -F'=' '{print $2}')
+
+
+	case $option_type in
+	vmname)
+		vmname=$option_value
+		;;
+	*)
+		echo "Bad argument"
+		exit 1
+		;;
+	esac
+done
+
+#############################################
+# Quick test of the parameters
+#############################################
+if [[ -z $vmname ]]
+then
+	echo "Error : All the parameters must be given"
+	exit 1
+fi
+
+#############################################
+# Get the CTID
+#############################################
+vm_ctid=$(/usr/sbin/vzlist -a | grep -E " ${vmname}$| ${vmname}[12]$" | awk '{print $1}')
+
+if [ -z $vm_ctid ]
+then
+	echo "Error : no CTID for this virtual machine"
+	exit 1
+fi
+
+#############################################
+# Delete the volume
+#############################################
+
+/usr/sbin/vzctl stop $vm_ctid && /usr/sbin/vzctl destroy $vm_ctid

@@ -1,0 +1,31 @@
+#! /bin/bash
+
+case $1 in
+1)
+	server=storalca1
+	;;
+2)
+	server=storalca2
+	;;
+*)
+	server=storalca1
+	;;
+esac
+
+if [[ -z $server ]]
+then
+	echo "$server pas bon"
+	exit 1
+fi
+
+## ipaddr
+ssh $server "/sbin/ifconfig eth0" | grep 'inet addr' | awk '{print $2}' | awk -F':' '{print $2}'
+
+## gateway
+ssh $server "/sbin/route" | grep eth0 | grep default | awk '{print $2}'
+
+## netmask
+ssh $server "/sbin/ifconfig eth0" | grep 'inet addr' | awk '{print $NF}' | awk -F':' '{print $2}'
+
+## DNS 1 and 2
+ssh $server "/bin/cat /etc/resolv.conf" | grep nameserver | awk '{print $2}'

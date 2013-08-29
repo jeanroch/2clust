@@ -1,0 +1,132 @@
+#! /bin/bash
+
+#################################################
+# search device disk
+cd /sys/block/
+device_disk_list=""
+for disk in $(ls -d sd* | sed s/@//g)
+do
+        disk_removable=$(cat ${disk}/removable)
+        [ $disk_removable -eq 0 ] && device_disk_list=$(echo -e "${device_disk_list}\n${disk}")
+done
+cd - > /dev/null
+
+#################################################
+# set some variables
+IFS=$'\n'
+nb=$RANDOM
+
+#################################################
+# function
+function show_value
+{
+	# $1 is the char to print
+	# $2 is the variable
+
+	if [[ $2 != "" ]]
+	then
+		echo $2 | grep [A-z] > /dev/null 2>&1
+		if [ $? -eq 0 ]
+		then
+			echo "$2"
+		else
+			echo "$(printf "%.1f" $2) $1"
+		fi
+	else
+		echo ""
+	fi
+}
+
+#################################################
+# openvz status
+/etc/init.d/vz status > /dev/null
+if [[ $? -eq 0 ]]
+then
+	echo "OpenVZ = OK"
+else
+	echo "OpenVZ = stopped"
+fi
+
+#################################################
+# drbd status
+# search for the drbd devices
+for drbd_r in $(grep "/dev/drbd" /etc/drbd.d/drbd-alca.res | awk '{print $NF}' | sed s/';'/''/ | sed s/'\/dev\/drbd'/''/| sort)
+do
+	cat /proc/drbd | grep "^ ${drbd_r}: " | grep 'cs:Connected ro:Primary/Primary ds:UpToDate/UpToDate' > /dev/null
+	if [[ $? -eq 0 ]]
+	then
+		echo "DRBD = disk ${drbd_r}: OK"
+	else
+		echo DRBD = disk$(cat /proc/drbd | grep "^ ${drbd_r}: ")
+	fi
+done
+
+#################################################
+# actual CPU usage
+actual_cpu_idle=$(sar 1 1 | tail -1 | awk '{print $NF}')
+actual_cpu=$(echo "100 - $actual_cpu_idle" | bc)
+echo -e "Actual CPU usage = \c"
+show_value '%' $actual_cpu
+
+#################################################
+# average CPU usage for the last hour
+actual_hour=$(date +%H)
+[[ $actual_hour = 00 ]] && start_time='23' && sar_file=$(printf "%02u\n" $(echo "$(date +%d)-1" | bc))
+[[ $actual_hour != 00 ]] && start_time=$(printf "%02u\n" $(echo "$(date +%H)-1" | bc)) && sar_file=$(date +%d)
+avg_cpu_day_idle=$(sar -s ${start_time}:00:00 -e ${actual_hour}:00:00 -f /var/log/sa/sa${sar_file} | tail -1 | grep Average | awk '{print $NF}')
+avg_cpu_day=$(echo "100 - $avg_cpu_day_idle" | bc)
+echo -e "Last hour CPU usage = \c"
+show_value '%' $avg_cpu_day
+
+#################################################
+# Ram usage
+free -m > /tmp/to_be_delete_$nb
+mem_total=$(cat /tmp/to_be_delete_$nb | grep 'Mem:' | awk '{print $2}')
+# mem_used=$(cat /tmp/to_be_delete_$nb | grep 'Mem:' | awk '{print $3}')
+mem_used=$(cat /tmp/to_be_delete_$nb | grep 'buffers/cache:' | awk '{print $3}')
+mem_usage=$(echo "(${mem_used}*100)/${mem_total}" | bc)
+echo -e "Memory usage = \c"
+show_value '%' $mem_usage
+
+#################################################
+# swap usage
+swap_total=$(cat /tmp/to_be_delete_$nb | grep 'Swap:' | awk '{print $2}')
+swap_used=$(cat /tmp/to_be_delete_$nb | grep 'Swap:' | awk '{print $3}')
+swap_usage=$(echo "(${swap_used}*100)/${swap_total}" | bc)
+echo -e "Swap usage = \c"
+show_value '%' $swap_usage
+rm -f /tmp/to_be_delete_$nb
+
+#################################################
+# nb of process
+nb_process=$(echo "$(ps -e | wc -l)-2" | bc)
+echo "Number of process = $nb_process"
+
+#################################################
+# CPU temperature
+cpu_temperature=$(/usr/bin/sensors 2>&1 | /bin/grep temp2 | /bin/awk '{print $2}' | /bin/sed s/'+'/''/g | sed s/'°C'/''/g | grep -v ^$)
+cpu_temperature=$(echo "$cpu_temperature" | grep -v ^$)
+echo -e "CPU temperature = \c"
+show_value '°C' $cpu_temperature
+
+#################################################
+# HDD temperature
+count=0
+for disk in $(echo "$device_disk_list")
+do
+	hdd_temperature=$(/usr/sbin/hddtemp -n /dev/${disk} 2>&1 | grep -v ^$)
+	echo -e "Disk temperature = disk ${count}: \c"
+	show_value '°C' $hdd_temperature
+	count=$(expr ${count} \+ 1)
+done
+
+#################################################
+# HDD Smart health status
+count=0
+for disk in $(echo "$device_disk_list")
+do
+	smart_test=$(/usr/sbin/smartctl -H /dev/${disk} | grep "test result" | grep -v ^$ | tail -n 1 | awk -F':' '{print $NF}')
+	echo "Disk health test = disk ${count}:$smart_test"
+	count=$(expr ${count} \+ 1)
+done
+

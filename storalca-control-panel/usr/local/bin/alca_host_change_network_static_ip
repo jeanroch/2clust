@@ -1,0 +1,99 @@
+#! /bin/bash
+
+exec 2>&1
+
+conf_file_eth="/etc/sysconfig/network-scripts/ifcfg-eth0"
+conf_file_eth_save="/home/apache/backup/save_ifcfg-eth0"
+
+#############################################
+# Get the arguments
+#############################################
+for param in $*
+do
+	option_type=$(echo $param | awk -F'=' '{print $1}')
+	option_value=$(echo $param | awk -F'=' '{print $2}')
+
+	#############################################
+	# Test the IP format
+	#############################################
+	digit_nb=0
+	for ip in $(echo $option_value | sed s/'\.'/' '/g )
+	do
+		digit_nb=$(expr $digit_nb \+ 1)
+		if [[ $ip -gt 255 ]] || [[ $ip -lt 0 ]]
+		then
+			echo "Error : IPv4 format not good"
+			exit 1
+		fi
+	done
+	if [[ $digit_nb -ne 4 ]]
+	then
+		echo "Error : IPv4 format not good"
+		exit 1
+	fi
+
+	case $option_type in
+	ipaddr)
+		ipaddr=$option_value
+		;;
+	gateway)
+		gateway=$option_value
+		;;
+	netmask)
+		netmask=$option_value
+		;;
+	dns1)
+		dns1=$option_value
+		;;
+	dns2)
+		dns2=$option_value
+		;;
+	*)
+		echo "Bad argument"
+		exit 1
+		;;
+	esac
+done
+
+#############################################
+# Test the parameters
+#############################################
+if [[ -z $ipaddr ]] || [[ -z $gateway ]] || [[ -z $netmask ]] || [[ -z $dns1 ]]
+then
+	echo "Error : All the parameters must be given"
+	exit 1
+fi
+
+#############################################
+# Take back the comment, MAC address and prepare the new file
+#############################################
+comment=$(head -1 $conf_file_eth)
+mac_addr=$(grep HWADDR ${conf_file_eth})
+
+rm -f ${conf_file_eth_save}
+/bin/cp -af ${conf_file_eth} ${conf_file_eth_save}
+
+echo $comment > ${conf_file_eth}
+echo "DEVICE=eth0
+BOOTPROTO=static
+TYPE=Ethernet
+ONBOOT=yes
+$mac_addr" >> ${conf_file_eth}
+
+#############################################
+# build the new config file
+#############################################
+echo "IPADDR=$ipaddr
+GATEWAY=$gateway
+NETMASK=$netmask
+DNS1=$dns1" >> ${conf_file_eth}
+[[ -n $dns2 ]] && echo "DNS2=$dns2" >> ${conf_file_eth}
+
+#############################################
+# for the DNS entry
+#############################################
+echo "nameserver $dns1" > /etc/resolv.conf
+[[ -n $dns2 ]] && echo "nameserver $dns2" >> /etc/resolv.conf
+
+/sbin/ifdown eth0
+/sbin/ifup eth0

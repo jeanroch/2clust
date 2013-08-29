@@ -1,0 +1,19 @@
+#! /bin/bash
+
+server_name=$(uname -n)
+
+if [[ $server_name = "storalca1" ]]
+then
+	/usr/bin/rsync -aWAX --delete-during -e "ssh" /vz/private root@storalca2:/vz/storalca1/
+	/usr/bin/rsync -aWAX --delete-during -e "ssh" /vz/etc root@storalca2:/vz/storalca1/
+
+elif  [[ $server_name = "storalca2" ]]
+then
+	/usr/bin/rsync -aWAX --delete-during -e "ssh" /vz/private root@storalca1:/vz/storalca2/
+	/usr/bin/rsync -aWAX --delete-during -e "ssh" /vz/etc root@storalca1:/vz/storalca2/
+
+else
+	echo "ERROR : wrong server name"
+	exit 1
+fi
+

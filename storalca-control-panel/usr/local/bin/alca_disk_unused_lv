@@ -1,0 +1,21 @@
+#! /bin/bash
+
+IFS=$'\n'
+
+/sbin/lvs | grep vgr0 | awk '{print $1}' > /tmp/to_be_delete_lv_$nb
+/usr/sbin/vzlist -a | grep -v 'IP_ADDR' | awk '{print $1}' > /tmp/to_be_delete_vm_$nb
+
+for lvname in $(cat /tmp/to_be_delete_lv_$nb)
+do
+	for vm_id in $(cat /tmp/to_be_delete_vm_$nb)
+	do
+		grep "DEVNODES=" /etc/vz/conf/${vm_id}.conf
+	done \
+		| grep "vgr0/${lvname}" > /dev/null 2>&1
+		if [ $? -ne 0 ]
+		then
+			echo $lvname
+		fi
+done
+
+rm -f /tmp/to_be_delete_lv_$nb /tmp/to_be_delete_vm_$nb

@@ -1,0 +1,33 @@
+#! /bin/bash
+
+
+IFS=$'\n'
+
+physical_host_ip=$(/sbin/ifconfig eth0 | grep 'inet addr' | awk '{print $2}' | awk -F':' '{print $2}')
+physical_host_netmask=$(/sbin/ifconfig eth0 | grep 'inet addr' | awk '{print $NF}' | awk -F':' '{print $2}')
+
+#physical_host_ip=192.168.8.70
+#physical_host_netmask=255.255.64.0
+
+ip_final=''
+
+for i in 1 2 3 4
+do
+	ip_nb=$(echo $physical_host_ip | awk -F'.' '{print $'$i'}')
+	netmask_nb=$(echo $physical_host_netmask | awk -F'.' '{print $'$i'}')
+
+	if [[ $netmask_nb -lt 255 ]]
+	then
+		max_last_nb=$(echo "255-${netmask_nb}" | bc)
+		echo $i
+		[[ $i -eq 1 ]] && echo $ip_nb
+		[[ $i -gt 1 ]] && echo $ip_final
+		echo $max_last_nb
+		break
+	else
+		[[ $i -eq 1 ]] && ip_final=${ip_nb}
+		[[ $i -gt 1 ]] && ip_final=$(echo "${ip_final}.${ip_nb}")
+	fi
+	
+done
+

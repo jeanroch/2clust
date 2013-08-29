@@ -1,0 +1,39 @@
+#! /bin/bash
+
+exec 2>&1
+
+#############################################
+# Get the arguments
+#############################################
+for param in $*
+do
+	option_type=$(echo $param | awk -F'=' '{print $1}')
+	option_value=$(echo "$param" | awk -F'=' '{print $2}')
+
+	case $option_type in
+	action)
+		action=$option_value
+		;;
+	*)
+		echo "Bad argument"
+		exit 1
+		;;
+	esac
+done
+
+#############################################
+# Send the command
+#############################################
+if [[ $action = 'halt' ]]
+then
+	/usr/bin/nohup /sbin/shutdown -h now &
+
+elif [[ $action = 'reboot' ]]
+then
+	/usr/bin/nohup /sbin/reboot &
+
+else
+	echo "Error : Wrong Parameter"
+	exit 1
+fi
+

@@ -1,0 +1,7 @@
+#! /bin/bash
+
+
+for server in storalca1 storalca2
+do
+	/usr/bin/ssh ${server} "/bin/ls /vz/template/cache/ | sed s/'\.tar\.gz'/''/g"
+done | sort | uniq

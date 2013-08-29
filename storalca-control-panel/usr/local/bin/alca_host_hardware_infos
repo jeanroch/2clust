@@ -1,0 +1,23 @@
+#! /bin/bash
+
+
+#################################################
+# kernel version
+echo "kernel version = $(uname -r) $(uname -p)"
+
+#################################################
+# CPU model
+echo "CPU = $(cat /proc/cpuinfo | grep 'model name' | head -1 | awk -F':' '{print $NF}' | sed s/'^ '/''/)"
+
+#################################################
+# Ram size
+echo "Ram in Mo = $(free -m | grep 'Mem:' | awk '{print $2}') MB"
+
+#################################################
+# Disk size
+echo "Disk size = $(/sbin/fdisk -l /dev/sda | grep 'Disk /dev/sda:' | awk '{print $3" "$4}' | sed s/','/''/)"
+
+#################################################
+# Hardware information
+#/sbin/lspci | awk -F']' '{print $1"]"}' | awk -F'..:.... ' '{print $NF}' | sort | uniq
+
