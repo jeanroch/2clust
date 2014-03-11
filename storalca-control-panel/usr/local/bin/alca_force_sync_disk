@@ -2,7 +2,6 @@
 
 exec 2>&1
 
-
 #############################################
 # Get the arguments
 #############################################
@@ -13,21 +12,33 @@ then
 	exit 1
 fi
 
+server_name=$(/bin/uname -n)
+case ${server_name} in
+	storalca1)
+		remote_server=storalca2
+		;;
+	storalca2)
+		remote_server=storalca1
+		;;
+	*)
+		echo "Error cannot get local server name"
+		exit 1
+		;;
+esac
+
 for param in $*
 do
 	option=$(echo $param | awk -F'=' '{print $1}')
 
 	case $option in
 	newmaster)
-		#export drbd_option='invalidate_remote'
-		#/sbin/drbdadm ${drbd_option} all
-		/sbin/drbdadm invalidate_remote all
+		/sbin/drbdadm invalidate-remote all
 		/sbin/drbdsetup /dev/drbd0 primary -o
+		ssh root@${remote_server} "/sbin/reboot"
 		;;
 	deletelocal)
-		#export drbd_option='invalidate'
-		#/sbin/drbdadm ${drbd_option} all
 		/sbin/drbdadm invalidate all
+		/sbin/reboot
 		;;
 	*)
 		echo "Bad argument, should be 'newmaster' or 'deletelocal'"
@@ -35,5 +46,3 @@ do
 		;;
 	esac
 done
-
-
